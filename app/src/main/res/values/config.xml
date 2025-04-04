@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Start page -->
+    <string name="start_page">https://o-mate.app</string>
+
+    <!-- These domains are opened in the app. All others are opened using the system browser. -->
+    <string-array name="internal_domains">
+        <item>www.o-mate.app</item>
+        <item>o-mate.app</item>
+    </string-array>
+</resources>
