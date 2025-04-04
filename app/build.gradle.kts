@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.yolo_android"
+    namespace = "ch.seccom.omate"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.yolo_android"
+        applicationId = "ch.seccom.omate"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
