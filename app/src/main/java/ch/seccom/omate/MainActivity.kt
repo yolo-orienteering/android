@@ -82,9 +82,17 @@ class MainActivity : AppCompatActivity() {
         if (internalDomains.contains(uri.host)) {
             return false
         } else {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse(url)
-            startActivity(intent)
+            val targetUri = when (uri.scheme) {
+                "webcal" -> uri.buildUpon().scheme("https").build()
+                "webcals" -> uri.buildUpon().scheme("https").build()
+                else -> uri
+            }
+            val intent = Intent(Intent.ACTION_VIEW, targetUri)
+            try {
+                startActivity(intent)
+            } catch (e: android.content.ActivityNotFoundException) {
+                return false
+            }
             return true
         }
     }
