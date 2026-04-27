@@ -1,4 +1,5 @@
 package ch.seccom.omate
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.webkit.WebView
@@ -82,9 +83,16 @@ class MainActivity : AppCompatActivity() {
         if (internalDomains.contains(uri.host)) {
             return false
         } else {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse(url)
-            startActivity(intent)
+            val targetUri = when (uri.scheme) {
+                "webcal", "webcals" -> uri.buildUpon().scheme("https").build()
+                else -> uri
+            }
+            val intent = Intent(Intent.ACTION_VIEW, targetUri)
+            try {
+                startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                return false
+            }
             return true
         }
     }
