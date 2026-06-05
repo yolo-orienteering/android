@@ -11,8 +11,11 @@ android {
         applicationId = "ch.seccom.omate"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // versionCode is reported to the web app via the User-Agent (o-mate-app/<versionCode>).
+        // Calendar/webcal handling was added in versionCode 2; the frontend gates that feature
+        // on it — keep in lockstep with the iOS CFBundleVersion (see frontend useNativeApp).
+        versionCode = 2
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
