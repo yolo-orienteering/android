@@ -17,11 +17,31 @@
         tools:targetApi="31">
         <activity
             android:name="ch.seccom.omate.MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode"
+            android:launchMode="singleTop"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Android App Links: open https://o-mate.app links in the app instead of a
+                 browser. Auto-verification requires /.well-known/assetlinks.json on the
+                 domain (see frontend/public/.well-known/assetlinks.json). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- All o-mate.app pages deep-link into the app — no per-route allow-list.
+                     The calendar feed is served from the API host (admin.o-mate.app), a
+                     DIFFERENT host that is not matched here, so webcal/.ics links are never
+                     claimed by the app. (In-app .ics taps are additionally intercepted in
+                     MainActivity.handleUrl.) Keep the calendar feed off the o-mate.app host. -->
+                <data android:scheme="https" android:host="o-mate.app" />
+                <data android:scheme="https" android:host="www.o-mate.app" />
             </intent-filter>
         </activity>
     </application>

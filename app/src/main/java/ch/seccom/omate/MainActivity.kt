@@ -70,15 +70,40 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        var url = resources.getString(R.string.start_page)
-        if (intentAction == Intent.ACTION_VIEW && intentData != null) {
-            url = intentData.toString()
-        }
+        // The page to load on a fresh start. Set per build type (debug = localhost dev,
+        // release = production) via BuildConfig.START_URL — see app/build.gradle.kts.
+        val startUrl = BuildConfig.START_URL
 
-        // Only reload page if app is newly opened
-        if (savedInstanceState == null) {
-            // myWebView.loadUrl("https://o-mate.app")
-            myWebView.loadUrl("http://10.0.2.2:3000/")
+        // A deep link (an https://o-mate.app/... link opened from mail or another browser)
+        // arrives as an ACTION_VIEW intent — open that exact URL inside the app.
+        val deepLinkUrl =
+            if (intentAction == Intent.ACTION_VIEW && intentData != null) intentData.toString()
+            else null
+
+        // On recreation, restore the WebView so we never show a blank screen: rotation is
+        // kept alive via android:configChanges, but process death (e.g. after a long time in
+        // the background) still recreates the Activity. Fall back to a fresh load when there
+        // is no saved state to restore.
+        if (savedInstanceState == null || myWebView.restoreState(savedInstanceState) == null) {
+            myWebView.loadUrl(deepLinkUrl ?: startUrl)
+        }
+    }
+
+    // Preserve the WebView (history + current page) across process death so re-opening the
+    // app after a long time in the background doesn't show a blank screen.
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (::myWebView.isInitialized) {
+            myWebView.saveState(outState)
+        }
+    }
+
+    // A deep link that arrives while the app is already running (singleTop) is delivered here.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action == Intent.ACTION_VIEW && ::myWebView.isInitialized) {
+            intent.data?.let { myWebView.loadUrl(it.toString()) }
         }
     }
 
@@ -86,10 +111,11 @@ class MainActivity : AppCompatActivity() {
         val uri = Uri.parse(url)
         val scheme = uri.scheme?.lowercase()
 
-        // Calendar subscription links: hand webcal(s):// to the system / calendar app.
-        // The WebView itself cannot load these, so opening them in-place would crash the app.
+        // Calendar subscription links: hand webcal(s):// and any .ics feed to the system
+        // (calendar app / browser). The WebView can't render these, and a calendar link
+        // must never open or reload the o-mate app.
         if (scheme == "webcal" || scheme == "webcals") {
-            openExternally(uri)
+            openCalendarSubscription(uri)
             return true
         }
 
@@ -103,23 +129,31 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    /** Open a URI with an external app, falling back gracefully instead of crashing. */
+    /** Open a URI with an external app, ignoring (rather than crashing on) a missing handler. */
     private fun openExternally(uri: Uri) {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, uri))
+        tryStart(Intent(Intent.ACTION_VIEW, uri))
+    }
+
+    /**
+     * Open a calendar feed (webcal:// or .ics) in a calendar app. Android has no native
+     * webcal:// handler (unlike iOS), so a plain ACTION_VIEW usually fails and a browser just
+     * downloads the file.
+     */
+    private fun openCalendarSubscription(uri: Uri) {
+        val scheme = uri.scheme?.lowercase()
+        val isWebcal = scheme == "webcal" || scheme == "webcals"
+
+        // 1) A calendar app that registers the webcal scheme, if one is installed.
+        if (isWebcal && tryStart(Intent(Intent.ACTION_VIEW, uri))) return
+    }
+
+    /** Start [intent], returning false instead of crashing if nothing can handle it. */
+    private fun tryStart(intent: Intent): Boolean {
+        return try {
+            startActivity(intent)
+            true
         } catch (e: ActivityNotFoundException) {
-            // No app handles webcal:// — open the underlying https feed in a browser instead.
-            val scheme = uri.scheme?.lowercase()
-            if (scheme == "webcal" || scheme == "webcals") {
-                val httpsUri = uri.buildUpon()
-                    .scheme(if (scheme == "webcals") "https" else "http")
-                    .build()
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW, httpsUri))
-                } catch (_: ActivityNotFoundException) {
-                    // Nothing can handle it — swallow rather than crash.
-                }
-            }
+            false
         }
     }
 

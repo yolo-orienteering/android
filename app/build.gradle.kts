@@ -20,8 +20,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        // Generates BuildConfig so START_URL (set per build type below) is available in code.
+        buildConfig = true
+    }
+
     buildTypes {
+        debug {
+            // Make sure the url is the one available in your wifi.
+            val devStartUrl = (project.findProperty("devStartUrl") as String?)
+                ?: System.getenv("DEV_START_URL")
+                ?: "http://192.168.0.20:3000/"
+            buildConfigField("String", "START_URL", "\"$devStartUrl\"")
+        }
         release {
+            // Production environment — used by `./gradlew assembleRelease` / bundleRelease.
+            // Override via -PprodStartUrl=... or env var PROD_START_URL=...
+            val prodStartUrl = (project.findProperty("prodStartUrl") as String?)
+                ?: System.getenv("PROD_START_URL")
+                ?: "https://o-mate.app"
+            buildConfigField("String", "START_URL", "\"$prodStartUrl\"")
+
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
