@@ -14,8 +14,8 @@ android {
         // versionCode is reported to the web app via the User-Agent (o-mate-app/<versionCode>).
         // Calendar/webcal handling was added in versionCode 2; the frontend gates that feature
         // on it — keep in lockstep with the iOS CFBundleVersion (see frontend useNativeApp).
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 3
+        versionName = "3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
